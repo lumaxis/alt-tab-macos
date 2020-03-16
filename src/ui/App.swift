@@ -119,14 +119,19 @@ class App: NSApplication, NSApplicationDelegate {
             Spaces.updateIsSingleSpace()
             // TODO: find a way to update space index when windows are moved to another space, instead of on every trigger
             Windows.updateSpaces()
-            // TODO: find a way to update thumbnails by listening to content change, instead of every trigger. Or better, switch to video
-            Windows.refreshAllThumbnails()
             Windows.focusedWindowIndex = 0
             Windows.cycleFocusedWindowIndex(step)
             DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + Preferences.windowDisplayDelay, execute: { [weak self] in
                 guard let self = self else { return }
                 self.refreshOpenUi()
                 if self.uiWorkShouldBeDone { self.thumbnailsPanel?.show() }
+                DispatchQueue.main.async {
+                    if self.uiWorkShouldBeDone {
+                        // TODO: find a way to update thumbnails by listening to content change, instead of every trigger. Or better, switch to video
+                        Windows.refreshAllThumbnails()
+                        self.refreshOpenUi()
+                    }
+                }
             })
         } else {
             debugPrint("showUiOrCycleSelection: !isFirstSummon")
