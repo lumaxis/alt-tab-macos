@@ -22,11 +22,11 @@ class FontIcon: CellTitle {
     // number should be in the interval [0-50]
     func setNumber(_ number: UInt32) {
         let (baseCharacter, offset) = baseCharacterAndOffset(number)
-        string = String(UnicodeScalar(baseCharacter.unicodeScalars.first!.value + offset)!)
+        assignIfDifferent(&string, String(UnicodeScalar(baseCharacter.unicodeScalars.first!.value + offset)!))
     }
 
     func setStar() {
-        string = FontIcon.sfSymbolCircledStart
+        assignIfDifferent(&string, FontIcon.sfSymbolCircledStart)
     }
 
     private func baseCharacterAndOffset(_ number: UInt32) -> (String, UInt32) {

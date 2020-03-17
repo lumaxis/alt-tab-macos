@@ -164,3 +164,10 @@ extension NSImage {
         return img
     }
 }
+
+// only assign if different; useful for performance
+func assignIfDifferent<T: Equatable>(_ a: UnsafeMutablePointer<T>, _ b: T) {
+    if a.pointee != b {
+        a.pointee = b
+    }
+}

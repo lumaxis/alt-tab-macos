@@ -65,21 +65,28 @@ class CollectionViewItemView: NSStackView {
 
     func updateRecycledCellWithNewContent(_ element: Window, _ mouseDownCallback: @escaping MouseDownCallback, _ mouseMovedCallback: @escaping MouseMovedCallback, _ screen: NSScreen) {
         window_ = element
-        thumbnail.image = element.thumbnail
-        let (thumbnailWidth, thumbnailHeight) = CollectionViewItemView.thumbnailSize(element.thumbnail, screen)
-        let thumbnailSize = NSSize(width: thumbnailWidth.rounded(), height: thumbnailHeight.rounded())
-        thumbnail.image?.size = thumbnailSize
-        thumbnail.frame.size = thumbnailSize
-        appIcon.image = element.icon
-        let appIconSize = NSSize(width: Preferences.iconSize, height: Preferences.iconSize)
-        appIcon.image?.size = appIconSize
-        appIcon.frame.size = appIconSize
-        label.string = element.title
-        // workaround: setting string on NSTextView change the font (most likely a Cocoa bug)
-        label.font = Preferences.font
-        hiddenIcon.isHidden = !window_!.isHidden
-        minimizedIcon.isHidden = !window_!.isMinimized
-        spaceIcon.isHidden = element.spaceIndex == nil || Spaces.isSingleSpace || Preferences.hideSpaceNumberLabels
+//        element.itemView = self
+        if thumbnail.image != element.thumbnail {
+            thumbnail.image = element.thumbnail
+            let (thumbnailWidth, thumbnailHeight) = CollectionViewItemView.thumbnailSize(element.thumbnail, screen)
+            let thumbnailSize = NSSize(width: thumbnailWidth.rounded(), height: thumbnailHeight.rounded())
+            thumbnail.image?.size = thumbnailSize
+            thumbnail.frame.size = thumbnailSize
+        }
+        if appIcon.image != element.icon {
+            appIcon.image = element.icon
+            let appIconSize = NSSize(width: Preferences.iconSize, height: Preferences.iconSize)
+            appIcon.image?.size = appIconSize
+            appIcon.frame.size = appIconSize
+        }
+        if label.string != element.title {
+            label.string = element.title
+            // workaround: setting string on NSTextView change the font (most likely a Cocoa bug)
+            label.font = Preferences.font
+        }
+        assignIfDifferent(&hiddenIcon.isHidden, !window_!.isHidden)
+        assignIfDifferent(&minimizedIcon.isHidden, !window_!.isMinimized)
+        assignIfDifferent(&spaceIcon.isHidden, element.spaceIndex == nil || Spaces.isSingleSpace || Preferences.hideSpaceNumberLabels)
         if !spaceIcon.isHidden {
             if element.isOnAllSpaces {
                 spaceIcon.setStar()
@@ -88,14 +95,16 @@ class CollectionViewItemView: NSStackView {
             }
         }
         let fontIconWidth = CGFloat([minimizedIcon, hiddenIcon, spaceIcon].filter { !$0.isHidden }.count) * (Preferences.fontIconSize + Preferences.intraCellPadding)
-        label.textContainer!.size.width = frame.width - Preferences.iconSize - Preferences.intraCellPadding * 3 - fontIconWidth
-        subviews.first!.frame.size = frame.size
+        assignIfDifferent(&label.textContainer!.size.width, frame.width - Preferences.iconSize - Preferences.intraCellPadding * 3 - fontIconWidth)
+        assignIfDifferent(&subviews.first!.frame.size, frame.size)
         self.mouseDownCallback = mouseDownCallback
         self.mouseMovedCallback = mouseMovedCallback
-        if trackingAreas.count > 0 {
+        if trackingAreas.count == 0 {
+            addTrackingArea(NSTrackingArea(rect: bounds, options: [.mouseMoved, .activeAlways], owner: self, userInfo: nil))
+        } else if trackingAreas.count > 0 && trackingAreas[0].rect != bounds {
             removeTrackingArea(trackingAreas[0])
+            addTrackingArea(NSTrackingArea(rect: bounds, options: [.mouseMoved, .activeAlways], owner: self, userInfo: nil))
         }
-        addTrackingArea(NSTrackingArea(rect: bounds, options: [.mouseMoved, .activeAlways], owner: self, userInfo: nil))
     }
 
     static func makeShadow(_ color: NSColor) -> NSShadow {
