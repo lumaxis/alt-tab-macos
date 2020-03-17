@@ -97,8 +97,7 @@ class App: NSApplication, NSApplicationDelegate {
 
     @objc
     func showUi() {
-        uiWorkShouldBeDone = true
-        showUiOrCycleSelection(0)
+        _ = dispatchWork(self, true, { self.showUiOrCycleSelection(0) })
     }
 
     func cycleSelection(_ step: Int) {
