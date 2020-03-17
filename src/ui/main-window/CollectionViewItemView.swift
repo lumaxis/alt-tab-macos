@@ -65,7 +65,7 @@ class CollectionViewItemView: NSStackView {
 
     func updateRecycledCellWithNewContent(_ element: Window, _ mouseDownCallback: @escaping MouseDownCallback, _ mouseMovedCallback: @escaping MouseMovedCallback, _ screen: NSScreen) {
         window_ = element
-//        element.itemView = self
+        element.itemView = self
         if thumbnail.image != element.thumbnail {
             thumbnail.image = element.thumbnail
             let (thumbnailWidth, thumbnailHeight) = CollectionViewItemView.thumbnailSize(element.thumbnail, screen)

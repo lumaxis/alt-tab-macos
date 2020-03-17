@@ -1,6 +1,7 @@
 import Cocoa
 
 class Window {
+    weak var itemView: CollectionViewItemView?
     var cgWindowId: CGWindowID
     var title: String
     var thumbnail: NSImage?

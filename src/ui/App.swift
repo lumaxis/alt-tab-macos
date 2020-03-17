@@ -122,8 +122,7 @@ class App: NSApplication, NSApplicationDelegate {
             Windows.updateSpaces()
             Windows.focusedWindowIndex = 0
             Windows.cycleFocusedWindowIndex(step)
-            DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + Preferences.windowDisplayDelay) { [weak self] in
-                guard let self = self else { return }
+            DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + Preferences.windowDisplayDelay) {
                 self.refreshOpenUi()
                 if self.uiWorkShouldBeDone { self.thumbnailsPanel!.show() }
                 self.refreshThumbnails()
@@ -136,11 +135,16 @@ class App: NSApplication, NSApplicationDelegate {
 
     // TODO: find a way to update thumbnails by listening to content change, instead of every trigger. Or better, switch to video
     func refreshThumbnails() {
-        DispatchQueue.main.async { [weak self] in
-            guard let self = self else { return }
-            if self.uiWorkShouldBeDone { Windows.refreshAllThumbnails() }
-            if self.uiWorkShouldBeDone { self.thumbnailsPanel!.collectionView.reloadData() }
-            if self.uiWorkShouldBeDone { self.thumbnailsPanel!.highlightCell() }
+        if self.uiWorkShouldBeDone { Windows.refreshAllThumbnails() }
+        Windows.list.forEach { window in
+            if self.uiWorkShouldBeDone {
+                if window.itemView!.thumbnail.image != window.thumbnail {
+                    let size = window.itemView!.thumbnail.image!.size
+                    window.itemView!.thumbnail.image = window.thumbnail
+                    window.itemView!.thumbnail.image!.size = size
+                    window.itemView!.thumbnail.frame.size = size
+                }
+            }
         }
     }
 
