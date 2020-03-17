@@ -74,9 +74,9 @@ extension NSObject {
 
 extension Array where Element == Window {
     func firstIndexThatMatches(_ element: AXUIElement) -> Self.Index? {
-        // `CFEqual` is safer than comparing `CGWindowID` because it will succeed even if the window is deallocated
+        // == is safer than comparing `CGWindowID` because it will succeed even if the window is deallocated
         // by the OS, in which case the `CGWindowID` will be `-1`
-        return firstIndex(where: { CFEqual($0.axUiElement, element) })
+        return firstIndex(where: { $0.axUiElement == element })
     }
 
     func firstWindowThatMatches(_ element: AXUIElement) -> Window? {

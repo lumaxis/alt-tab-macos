@@ -105,7 +105,7 @@ private func eventApplicationActivated(_ app: App, _ element: AXUIElement) {
 
 private func eventApplicationHiddenOrShown(_ app: App, _ element: AXUIElement, _ type: String) {
     for window in Windows.list {
-        guard CFEqual(window.application.axUiElement!, element) else { continue }
+        guard window.application.axUiElement! == element else { continue }
         window.isHidden = type == kAXApplicationHiddenNotification
     }
     app.refreshOpenUi()
