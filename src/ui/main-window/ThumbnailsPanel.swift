@@ -98,8 +98,7 @@ class ThumbnailsPanel: NSPanel, NSCollectionViewDataSource, NSCollectionViewDele
         if uiWorkShouldBeDone { layout.currentScreen = screen }
         if uiWorkShouldBeDone { layout.invalidateLayout() }
         if uiWorkShouldBeDone { collectionView.setFrameSize(NSSize(width: ThumbnailsPanel.widthMax(screen).rounded(), height: ThumbnailsPanel.heightMax(screen).rounded())) }
-        if uiWorkShouldBeDone { collectionView.reloadData() }
-        if uiWorkShouldBeDone { collectionView.layoutSubtreeIfNeeded() }
+        if uiWorkShouldBeDone { collectionView.layout() }
         if uiWorkShouldBeDone { collectionView.setFrameSize(NSSize(width: layout.widestRow!, height: layout.totalHeight!)) }
         let windowSize = NSSize(width: layout.widestRow! + Preferences.windowPadding * 2, height: layout.totalHeight! + Preferences.windowPadding * 2)
         if uiWorkShouldBeDone { setContentSize(windowSize) }

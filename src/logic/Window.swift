@@ -19,6 +19,7 @@ class Window {
         kAXTitleChangedNotification,
         kAXWindowMiniaturizedNotification,
         kAXWindowDeminiaturizedNotification,
+        kAXWindowResizedNotification,
     ]
 
     static func stopSubscriptionRetries(_ notification: String, _ cgWindowId: CGWindowID) {
@@ -57,8 +58,7 @@ class Window {
     }
 
     func refreshThumbnail() {
-        guard (App.shared as! App).appIsBeingUsed,
-              let cgImage = cgWindowId.screenshot() else { return }
+        guard let cgImage = cgWindowId.screenshot() else { return }
         thumbnail = NSImage(cgImage: cgImage, size: NSSize(width: cgImage.width, height: cgImage.height))
     }
 
@@ -121,6 +121,7 @@ private func axObserverCallback(observer: AXObserver, element: AXUIElement, noti
         case kAXUIElementDestroyedNotification: eventWindowDestroyed(app, element)
         case kAXWindowMiniaturizedNotification, kAXWindowDeminiaturizedNotification: eventWindowMiniaturizedOrDeminiaturized(app, element, type)
         case kAXTitleChangedNotification: eventWindowTitleChanged(app, element)
+        case kAXWindowResizedNotification: eventWindowResized(app, element)
         default: return
     }
 }
@@ -150,4 +151,8 @@ private func eventWindowTitleChanged(_ app: App, _ element: AXUIElement) {
     app.refreshOpenUi()
 }
 
-
+private func eventWindowResized(_ app: App, _ element: AXUIElement) {
+    guard let window = Windows.list.firstWindowThatMatches(element) else { return }
+    window.refreshThumbnail()
+    app.refreshOpenUi()
+}

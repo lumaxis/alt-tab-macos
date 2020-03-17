@@ -48,9 +48,9 @@ class Application: NSObject {
     }
 
     func observeNewWindows() {
-        let newWindows = axUiElement!.windows()?
-                .filter { $0.isActualWindow(runningApplication) && Windows.list.firstIndexThatMatches($0) == nil } ?? []
-        addWindows(newWindows)
+        if let windows = axUiElement!.windows() {
+            addWindows(windows.filter { $0.isActualWindow(runningApplication) && Windows.list.firstIndexThatMatches($0) == nil })
+        }
     }
 
     override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey: Any]?, context: UnsafeMutableRawPointer?) {
@@ -61,6 +61,8 @@ class Application: NSObject {
 
     private func addWindows(_ windows: [AXUIElement]) {
         Windows.list.insert(contentsOf: windows.map { Window($0, self) }, at: 0)
+        let indexes = Set((0...windows.count).map { IndexPath(item: $0, section: 0) })
+        (App.shared as! App).thumbnailsPanel!.collectionView.insertItems(at: indexes)
     }
 
     private func observeEvents() {
@@ -101,6 +103,8 @@ private func eventApplicationActivated(_ app: App, _ element: AXUIElement) {
           let appFocusedWindow = element.focusedWindow(),
           let existingIndex = Windows.list.firstIndexThatMatches(appFocusedWindow) else { return }
     Windows.list.insert(Windows.list.remove(at: existingIndex), at: 0)
+    let indexes = Set([existingIndex, 0].map { IndexPath(item: $0, section: 0) })
+    (App.shared as! App).thumbnailsPanel!.collectionView.reloadItems(at: indexes)
 }
 
 private func eventApplicationHiddenOrShown(_ app: App, _ element: AXUIElement, _ type: String) {
@@ -117,6 +121,7 @@ private func eventWindowCreated(_ app: App, _ element: AXUIElement, _ applicatio
     guard Windows.list.firstIndexThatMatches(element) == nil else { return }
     let window = Window(element, application)
     Windows.list.insert(window, at: 0)
+    (App.shared as! App).thumbnailsPanel!.collectionView.insertItems(at: [IndexPath(item: 0, section: 0)])
     Windows.moveFocusedWindowIndexAfterWindowCreatedInBackground()
     // TODO: find a better way to get thumbnail of the new window
     window.refreshThumbnail()
@@ -127,4 +132,6 @@ private func eventFocusedWindowChanged(_ app: App, _ element: AXUIElement) {
     guard !app.appIsBeingUsed,
           let existingIndex = Windows.list.firstIndexThatMatches(element) else { return }
     Windows.list.insert(Windows.list.remove(at: existingIndex), at: 0)
+    let indexes = Set((0...existingIndex).map { IndexPath(item: $0, section: 0) })
+    (App.shared as! App).thumbnailsPanel!.collectionView.reloadItems(at: indexes)
 }

@@ -42,6 +42,8 @@ class App: NSApplication, NSApplicationDelegate {
         Keyboard.listenToGlobalEvents(self)
         preferencesWindow = PreferencesWindow()
         UpdatesTab.observeUserDefaults()
+        Windows.refreshAllThumbnails()
+        thumbnailsPanel!.refreshCollectionView(Screen.preferred(), true) // artificial layout for better first-time performance
     }
 
     // keyboard shortcuts are broken without a menu. We generated the default menu from XCode and load it
@@ -119,18 +121,27 @@ class App: NSApplication, NSApplicationDelegate {
             Spaces.updateIsSingleSpace()
             // TODO: find a way to update space index when windows are moved to another space, instead of on every trigger
             Windows.updateSpaces()
-            // TODO: find a way to update thumbnails by listening to content change, instead of every trigger. Or better, switch to video
-            Windows.refreshAllThumbnails()
             Windows.focusedWindowIndex = 0
             Windows.cycleFocusedWindowIndex(step)
-            DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + Preferences.windowDisplayDelay, execute: { [weak self] in
+            DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + Preferences.windowDisplayDelay) { [weak self] in
                 guard let self = self else { return }
                 self.refreshOpenUi()
-                if self.uiWorkShouldBeDone { self.thumbnailsPanel?.show() }
-            })
+                if self.uiWorkShouldBeDone { self.thumbnailsPanel!.show() }
+                self.refreshThumbnails()
+            }
         } else {
             debugPrint("showUiOrCycleSelection: !isFirstSummon")
             cycleSelection(step)
+        }
+    }
+
+    // TODO: find a way to update thumbnails by listening to content change, instead of every trigger. Or better, switch to video
+    func refreshThumbnails() {
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            if self.uiWorkShouldBeDone { Windows.refreshAllThumbnails() }
+            if self.uiWorkShouldBeDone { self.thumbnailsPanel!.collectionView.reloadData() }
+            if self.uiWorkShouldBeDone { self.thumbnailsPanel!.highlightCell() }
         }
     }
 
@@ -144,9 +155,9 @@ class App: NSApplication, NSApplicationDelegate {
     func refreshOpenUi() {
         guard appIsBeingUsed else { return }
         let currentScreen = Screen.preferred() // fix screen between steps since it could change (e.g. mouse moved to another screen)
-        if uiWorkShouldBeDone { thumbnailsPanel!.refreshCollectionView(currentScreen, uiWorkShouldBeDone); debugPrint("refreshCollectionView") }
-        if uiWorkShouldBeDone { thumbnailsPanel!.highlightCell(); debugPrint("highlightCellAt") }
-        if uiWorkShouldBeDone { Screen.repositionPanel(thumbnailsPanel!, currentScreen, .appleCentered); debugPrint("repositionPanel") }
+        if uiWorkShouldBeDone { thumbnailsPanel!.refreshCollectionView(currentScreen, uiWorkShouldBeDone) }
+        if uiWorkShouldBeDone { thumbnailsPanel!.highlightCell() }
+        if uiWorkShouldBeDone { Screen.repositionPanel(thumbnailsPanel!, currentScreen, .appleCentered) }
     }
 
     func focusSelectedWindow(_ window: Window?) {
