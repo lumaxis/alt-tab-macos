@@ -6,7 +6,6 @@ class CollectionViewItem: NSCollectionViewItem {
 
     override func loadView() {
         view = CollectionViewItemView()
-        view.wantsLayer = true
     }
 
     override var isSelected: Bool {
