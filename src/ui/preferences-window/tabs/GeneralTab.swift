@@ -87,6 +87,7 @@ class GeneralTab: NSViewController, PreferencePane {
                 let fn = shortcutsActionsBlocks[controlId]!
                 let isShortcutAffectingTheUi = ["previousWindowShortcut", "nextWindowShortcut", "←", "→", "holdShortcut"].contains(controlId)
                 if isShortcutAffectingTheUi {
+                    App.app.userIsInteracting = true
                     DispatchQueue.main.async { () -> () in fn() }
                 } else {
                     fn()

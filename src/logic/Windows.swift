@@ -20,9 +20,7 @@ class Windows {
     }
 
     static func cycleFocusedWindowIndex(_ step: Int) {
-        DispatchQueue.main.async { () -> () in
-            updateFocusedWindowIndex(windowIndexAfterCycling(step))
-        }
+        updateFocusedWindowIndex(windowIndexAfterCycling(step))
     }
 
     static func windowIndexAfterCycling(_ step: Int) -> Int {
@@ -82,12 +80,6 @@ class Windows {
         Windows.list = sortedTuples.map { $0.1 }
     }
 
-    static func refreshAllThumbnails() {
-        list.forEachAsync { window in
-            window.refreshThumbnail()
-        }
-    }
-
     static func refreshWhichWindowsToShowTheUser(_ screen: NSScreen) {
         Windows.list.forEach { (window: Window) in
             refreshIfWindowShouldBeShownToTheUser(window, screen)
@@ -112,7 +104,6 @@ class Windows {
     }
 
     static func refreshAllExistingThumbnails() {
-        refreshAllThumbnails()
         guard App.app.appIsBeingUsed else { return }
         list.enumerated().forEach {
             let newImage = $0.element.thumbnail

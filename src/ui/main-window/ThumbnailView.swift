@@ -24,13 +24,10 @@ class ThumbnailView: NSStackView {
 
     func updateRecycledCellWithNewContent(_ element: Window, _ mouseDownCallback: @escaping MouseDownCallback, _ mouseMovedCallback: @escaping MouseMovedCallback, _ newHeight: CGFloat, _ screen: NSScreen) {
         window_ = element
-        if thumbnail.image != element.thumbnail {
-            thumbnail.image = element.thumbnail
-            let (thumbnailWidth, thumbnailHeight) = ThumbnailView.thumbnailSize(element.thumbnail, screen)
-            let thumbnailSize = NSSize(width: thumbnailWidth.rounded(), height: thumbnailHeight.rounded())
-            thumbnail.image?.size = thumbnailSize
-            thumbnail.frame.size = thumbnailSize
-        }
+        let (thumbnailWidth, thumbnailHeight) = ThumbnailView.thumbnailSize(thumbnail.image, screen)
+        let thumbnailSize = NSSize(width: thumbnailWidth.rounded(), height: thumbnailHeight.rounded())
+        thumbnail.image?.size = thumbnailSize
+        thumbnail.frame.size = thumbnailSize
         if appIcon.image != element.icon {
             appIcon.image = element.icon
             let appIconSize = NSSize(width: Preferences.iconSize, height: Preferences.iconSize)

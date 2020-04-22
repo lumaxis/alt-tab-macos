@@ -19,6 +19,7 @@ class App: NSApplication, NSApplicationDelegate {
     var feedbackWindow: FeedbackWindow?
     var isFirstSummon = true
     var appIsBeingUsed = false
+    var userIsInteracting = false
 
     override init() {
         super.init()
@@ -47,6 +48,7 @@ class App: NSApplication, NSApplicationDelegate {
         loadPreferencesWindow()
         // TODO: undeterministic; events in the queue may still be processing; good enough for now
         DispatchQueue.main.async { () -> () in Windows.sortByLevel() }
+        initialRefreshAllExistingThumbnails()
         preloadWindows()
     }
 
@@ -134,11 +136,12 @@ class App: NSApplication, NSApplicationDelegate {
     func showUi() {
         appIsBeingUsed = true
         appIsBeingUsed = true
-        DispatchQueue.main.async { () -> () in self.showUiOrCycleSelection(0) }
+        showUiOrCycleSelection(0)
     }
 
     func cycleSelection(_ step: Int) {
         Windows.cycleFocusedWindowIndex(step)
+        userIsInteracting = false
     }
 
     func focusSelectedWindow(_ window: Window?) {
@@ -170,7 +173,8 @@ class App: NSApplication, NSApplicationDelegate {
     private func refreshSpecificWindows(_ windowsToUpdate: [Window]?, _ updateWindowsInfo: Bool, _ currentScreen: NSScreen) -> ()? {
         windowsToUpdate?.forEach { (window: Window) in
             guard appIsBeingUsed else { return }
-            window.refreshThumbnail()
+            // TODO: uncomment and fix this
+//            window.refreshThumbnail()
             if updateWindowsInfo {
                 Windows.refreshIfWindowShouldBeShownToTheUser(window, currentScreen)
                 if !window.shouldShowTheUser && window.cgWindowId == Windows.focusedWindow()!.cgWindowId {
@@ -186,20 +190,24 @@ class App: NSApplication, NSApplicationDelegate {
     func showUiOrCycleSelection(_ step: Int) {
         debugPrint("showUiOrCycleSelection", step)
         if isFirstSummon {
-            debugPrint("showUiOrCycleSelection: isFirstSummon")
+            debugPrint("showUiOrCycleSelection: isFirstSummon.val")
             isFirstSummon = false
-            if Windows.list.count == 0 || CGWindow.isMissionControlActive() { hideUi(); return }
-            // TODO: find a way to update isSingleSpace by listening to space creation, instead of on every trigger
-            Spaces.idsAndIndexes = Spaces.allIdsAndIndexes()
-            // TODO: find a way to update space index when windows are moved to another space, instead of on every trigger
-            Windows.updateSpaces()
-            let screen = Screen.preferred()
-            Windows.refreshWhichWindowsToShowTheUser(screen)
-            if Windows.list.first(where: { $0.shouldShowTheUser }) == nil { hideUi(); return }
-            Windows.updateFocusedWindowIndex(0)
-            Windows.cycleFocusedWindowIndex(step)
-            DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + Preferences.windowDisplayDelay) { () -> () in
-                self.rebuildUi()
+            App.app.userIsInteracting = false
+            DispatchQueue.main.async { [weak self] () -> () in
+                guard let self = self else { return }
+                if Windows.list.count == 0 || CGWindow.isMissionControlActive() { self.hideUi(); return }
+                // TODO: find a way to update isSingleSpace by listening to space creation, instead of on every trigger
+                Spaces.idsAndIndexes = Spaces.allIdsAndIndexes()
+                // TODO: find a way to update space index when windows are moved to another space, instead of on every trigger
+                Windows.updateSpaces()
+                let screen = Screen.preferred()
+                Windows.refreshWhichWindowsToShowTheUser(screen)
+                if Windows.list.first(where: { $0.shouldShowTheUser }) == nil { self.hideUi(); return }
+                Windows.updateFocusedWindowIndex(0)
+                Windows.cycleFocusedWindowIndex(step)
+                DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + Preferences.windowDisplayDelay) { () -> () in
+                    self.rebuildUi()
+                }
             }
         } else {
             cycleSelection(step)
@@ -207,11 +215,67 @@ class App: NSApplication, NSApplicationDelegate {
     }
 
     func rebuildUi() {
-        guard appIsBeingUsed else { return }
-        Windows.refreshAllThumbnails()
+//        guard appIsBeingUsed.val else { return }
+//        Windows.refreshAllThumbnails()
         guard appIsBeingUsed else { return }
         refreshOpenUi()
         guard appIsBeingUsed else { return }
         thumbnailsPanel.show()
+        guard appIsBeingUsed else { return }
+        refreshAllExistingThumbnails()
+    }
+
+    func refreshAllExistingThumbnails() {
+        DispatchQueue.global(qos: .userInitiated).async {
+            self.test2()
+        }
+    }
+
+    func test2() {
+        guard App.app.appIsBeingUsed else { return }
+        Windows.list.enumerated().forEach {
+            (index, window) in
+            guard App.app.appIsBeingUsed else { return }
+            // this sleep helps space out updates so user inputs can be woven in
+            Thread.sleep(forTimeInterval: 0.1)
+            DispatchQueue.global(qos: .background).async {
+                guard App.app.appIsBeingUsed else { return }
+                guard let cgImage = window.cgWindowId.screenshot() else { return }
+                let image = NSImage(cgImage: cgImage, size: NSSize(width: cgImage.width, height: cgImage.height))
+                self.queueImageUpdateOnMainQueue(index, image)
+            }
+        }
+    }
+
+    private func queueImageUpdateOnMainQueue(_ index: Int, _ image: NSImage) {
+        DispatchQueue.main.async {
+            guard App.app.appIsBeingUsed else { return }
+            debugPrint("louis", App.app.userIsInteracting)
+            if App.app.userIsInteracting {
+//                self.queueImageUpdateOnMainQueue(index, image)
+                return
+            }
+            let view = ThumbnailsView.recycledViews[index].thumbnail
+            let oldSize = view.image?.size
+            view.image = image
+            if let oldSize = oldSize {
+                view.image!.size = oldSize
+                view.frame.size = oldSize
+            }
+        }
+    }
+
+    func initialRefreshAllExistingThumbnails() {
+        Windows.list.enumerated().forEach {
+            (index, window) in
+            DispatchQueue.global(qos: .userInitiated).async {
+                guard let cgImage = window.cgWindowId.screenshot() else { return }
+                let image = NSImage(cgImage: cgImage, size: NSSize(width: cgImage.width, height: cgImage.height))
+                DispatchQueue.main.async {
+                    () -> () in
+                    ThumbnailsView.recycledViews[index].thumbnail.image = image
+                }
+            }
+        }
     }
 }

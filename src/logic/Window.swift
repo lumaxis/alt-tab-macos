@@ -60,11 +60,6 @@ class Window {
         CFRunLoopAddSource(CFRunLoopGetCurrent(), AXObserverGetRunLoopSource(axObserver), .defaultMode)
     }
 
-    func refreshThumbnail() {
-        guard let cgImage = cgWindowId.screenshot() else { return }
-        thumbnail = NSImage(cgImage: cgImage, size: NSSize(width: cgImage.width, height: cgImage.height))
-    }
-
     func close() {
         DispatchQueues.accessibilityCommands.async { [weak self] in
             self?.axUiElement.closeWindow()
